@@ -30,6 +30,9 @@ class IRCTitler(Getter):
 		Getter.__init__(self, reactor)
 
 	def Output(self, data):
+		if data is None:
+			return
+
 		title = data[0]
 		context = data[1]
 		channel = context['channel']
@@ -44,7 +47,7 @@ class IRCTitler(Getter):
 		msg = '[ ' + title + ' ]'
 		
 		irc.msg(channel, msg)
-		Getter.Output(self, data)
+		# Getter.Output(self, data)
 
 channels = ['###testing', '##news']
 botnick = 'title'
