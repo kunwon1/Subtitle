@@ -38,6 +38,7 @@ class IRCTitler(Getter):
 		msg = '[ ' + title + ' ]'
 		
 		irc.msg(channel, msg)
+		Getter.Output(self, data)
 
 channels = ['###testing']
 botnick = 'title'

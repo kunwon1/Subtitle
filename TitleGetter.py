@@ -6,6 +6,8 @@ from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol
 from twisted.web.http_headers import Headers
 from twisted.python.util import println
+
+from string import strip
 import sys
 import re
 
@@ -72,10 +74,11 @@ class TitleGetter(Protocol):
 		m = self.titlePattern.search(body)
 		if m:
 			title = m.group(1)
+			title = strip(title)
 			return title
 			
 if __name__ == '__main__':
 	g = Getter(reactor)
 	for n in sys.argv[1:]:
-		g.Get(n, '#default')
+		g.Get(n, 'context data')
 	reactor.run()
