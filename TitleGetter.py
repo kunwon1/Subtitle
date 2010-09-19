@@ -13,29 +13,38 @@ class Getter(Agent):
 	def __init__(self, reactor):
 		Agent.__init__(self, reactor)
 
-	def Get(self, url):
+	def Get(self, url, context):
 		d = self.request(
 			'GET', url,
 			Headers({'User-Agent': [
 				'Mozilla/5.0 (compatible; Subtitle/0.1)']}),
 			None)
+		
+		def addContext(response):
+			response.context = context
+			return response
+
+		d.addCallback(addContext)
 		d.addCallback(self.__extractTitle)
 		d.addErrback(self.__err)
 		d.addCallback(self.Output)
-	
+
 	def __extractTitle(self, response):
 		finished = Deferred()
-		response.deliverBody(TitleGetter(finished))
+		response.deliverBody(TitleGetter(finished, response.context))
 		return finished
 		
 	def __err(self, failure):
 		println("an error occurred", failure)
 		
-	def Output(self, title):
-		println(title)
+	def Output(self, data):
+		title = data[0]
+		context = data[1]
+		println(title + ' ' + str(context))
 		
 class TitleGetter(Protocol):
-	def __init__(self, finished):
+	def __init__(self, finished, context):
+		self.context = context
 		self.finished = finished
 		self.remaining = 1024 * 1024
 		self.titlePattern = re.compile(
@@ -49,7 +58,7 @@ class TitleGetter(Protocol):
 			title = self.__extractTitle(chunk)
 			if title and self.titleSent == 0:
 				self.titleSent = 1
-				self.finished.callback(title)
+				self.finished.callback([title, self.context])
 			self.bodyStr = self.bodyStr + chunk
 			self.remaining -= len(chunk)
 
@@ -57,7 +66,7 @@ class TitleGetter(Protocol):
 		title = self.__extractTitle(self.bodyStr)
 		if title and self.titleSent == 0:
 			self.titleSent = 1
-			self.finished.callback(title)
+			self.finished.callback([title, self.context])
 		
 	def __extractTitle(self, body):
 		m = self.titlePattern.search(body)
@@ -68,5 +77,5 @@ class TitleGetter(Protocol):
 if __name__ == '__main__':
 	g = Getter(reactor)
 	for n in sys.argv[1:]:
-		g.Get(n)
+		g.Get(n, '#default')
 	reactor.run()
