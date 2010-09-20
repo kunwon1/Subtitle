@@ -100,7 +100,6 @@ class TitleGetter(Protocol):
 		self.remaining = 1024 * 1024
 		self.titlePattern = re.compile(
 			r'<title>(.*?)</title>', re.S | re.I )
-		self.entityPattern = re.compile("&(\w+?);")
 		self.bodyStr = ''
 		self.titleSent = 0
 
