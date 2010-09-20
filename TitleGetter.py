@@ -60,7 +60,6 @@ class Getter(Agent):
 			for c in cookies:
 				m = self.cookiePattern.search(c)
 				(k, v) = m.group(1, 2)
-				println(k + "=" + v)
 				response.context['cookies'][k] = v
 		if re.match("2", rcode):
 			return response
