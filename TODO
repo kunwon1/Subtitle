@@ -1,0 +1,19 @@
+TODO:
+
+Convert alternate incoming encodings to unicode.
+
+'First Post' tracking - remember who posted a url first and include that data with subsequent title responses.
+
+Cookie support is rudimentary, nothing is done with path or domain values, all received cookies are resent with 
+each subsequent request.  Needs to be made more robust, probably using an existing lib.
+
+!seen support, including populating database with historical data from the old perl version.
+
+!karma support, including populating database with historical data from logs.
+
+Ignore support with interface for chanops.
+
+'Ignore' support for urls/titles.  Need to be able to provide a means to block urls by regex and titles by 
+regex.
+
+!say support.
