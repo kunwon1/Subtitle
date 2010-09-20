@@ -52,7 +52,7 @@ class IRCTitler(Getter):
 		irc.msg(channel, msg)
 		# Getter.Output(self, data)
 
-channels = ['###testing']
+channels = ['###testing', '##news', '##politics']
 botnick = 'title'
 
 urlfinder = URLExtractor()
