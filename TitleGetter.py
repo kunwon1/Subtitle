@@ -120,7 +120,7 @@ class Getter(Agent):
 		returns deferred. """
 		
 		if response is None:
-			return
+			return None
 		finished = Deferred()
 		response.deliverBody(TitleGetter(finished, response.context))
 		return finished
@@ -135,7 +135,7 @@ class Getter(Agent):
 		Should be at the end of the callback chain """
 		
 		if data is None:
-			return
+			return None
 		title, context = data[:2]
 		println(title + ' ' + str(context))
 		
