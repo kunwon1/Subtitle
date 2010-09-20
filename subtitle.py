@@ -40,6 +40,9 @@ class IRCTitler(Getter):
 		### HACK FOR TESTING ###
 		if channel == '##news':
 			channel = '###testing'
+			
+		if channel == '##politics':
+			channel = '###testing'
 		########################
 		
 		irc = context['irc']
@@ -49,7 +52,7 @@ class IRCTitler(Getter):
 		irc.msg(channel, msg)
 		# Getter.Output(self, data)
 
-channels = ['###testing', '##news']
+channels = ['###testing']
 botnick = 'title'
 
 urlfinder = URLExtractor()

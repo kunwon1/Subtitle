@@ -17,6 +17,7 @@ class Getter(Agent):
 
 	def Get(self, url, context):
 		url = stripNoPrint(url)
+		println('Get: ' + url)
 		try:
 			context['cookies']
 		except KeyError:
@@ -129,10 +130,12 @@ class TitleGetter(Protocol):
 		title = string.strip(title)
 		title = descape_ents(title)
 		title = descape_decs(title)
+		title = normalizeWhitespace(title)
 		return title
 
 entityPattern = re.compile("&(\w+?);")
 decPattern = re.compile("&#(\d+?);")
+whitespacePattern = re.compile("\s+")
 
 def descape_dec(m):
 	return chr(int(m.group(1)))
@@ -155,6 +158,10 @@ def stripNoPrint(str):
 		if not int(ord(char)) <= 31:
 			results += char
 	return results
+	
+def normalizeWhitespace(str):
+	str = re.sub(whitespacePattern, ' ', str)
+	return str
 
 if __name__ == '__main__':
 	g = Getter(reactor)
