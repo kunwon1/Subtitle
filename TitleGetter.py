@@ -12,10 +12,15 @@ import sys, re, string, htmlentitydefs
 
 class Getter(Agent):
 	def __init__(self, reactor):
+		self.cookiePattern = re.compile("^(.+?)=(.+?);")
 		Agent.__init__(self, reactor)
 
 	def Get(self, url, context):
 		url = stripNoPrint(url)
+		try:
+			context['cookies']
+		except KeyError:
+			context['cookies'] = dict()
 
 		if not 'retry_count' in context:
 			context['retry_count'] = 0
@@ -25,11 +30,16 @@ class Getter(Agent):
 		else:
 			context['retry_count'] += 1
 		context['original_url'] = url
-
+		
+		cookies = ''
+		for k in context['cookies']:
+			cookies += k + '=' + context['cookies'][k] + '; '
+		
 		d = self.request(
 			'GET', url,
 			Headers({'User-Agent': [
-				'Mozilla/5.0 (compatible; Subtitle/0.1)']}),
+				'Mozilla/5.0 (compatible; Subtitle/0.1)'],
+				'Cookie': [cookies]}),
 			None)
 		
 		def addContext(response):
@@ -45,6 +55,13 @@ class Getter(Agent):
 	def __checkResponse(self, response):
 		rcode = str(response.code)
 		headers = response.headers
+		if headers.hasHeader('set-cookie'):
+			cookies = headers.getRawHeaders('set-cookie')
+			for c in cookies:
+				m = self.cookiePattern.search(c)
+				(k, v) = m.group(1, 2)
+				println(k + "=" + v)
+				response.context['cookies'][k] = v
 		if re.match("2", rcode):
 			return response
 		elif headers.hasHeader('location'):       # we got a redirect
@@ -83,6 +100,7 @@ class TitleGetter(Protocol):
 		self.remaining = 1024 * 1024
 		self.titlePattern = re.compile(
 			r'<title>(.*?)</title>', re.S | re.I )
+		self.entityPattern = re.compile("&(\w+?);")
 		self.bodyStr = ''
 		self.titleSent = 0
 
