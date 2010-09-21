@@ -1,7 +1,5 @@
 TODO:  (ordered by priority, highest first)
 
-Convert alternate incoming encodings to unicode.
-
 'First Post' tracking - remember who posted a url first and include that data with subsequent title responses.
 
 !seen support, including populating database with historical data from the old perl version.
