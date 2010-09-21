@@ -15,6 +15,7 @@ decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 cookiePattern = re.compile("^(.+?)=(.*?);")
+charsetPattern = re.compile("charset=([^\s]+)")
 
 entityDefs = htmlentitydefs.entitydefs
 
@@ -42,9 +43,18 @@ class Getter(Agent):
 			type str
 			original url, in case we have to retry after
 			following redirects
+			
+		context['charset']:
+			type str
+			charset received from server, so we can convert
+			to utf-8
 		
 		maxRetries defines the maximum number of times
 		we retry the fetch after a 4xx or 5xx response code
+		
+		GOTCHA: The titles you eventually get back from
+		Get() (through the deferred chain) are returned as
+		unicode strings.
 		
 		Returns deferred."""
 		
@@ -94,6 +104,11 @@ class Getter(Agent):
 		
 		rcode = str(response.code)
 		headers = response.headers
+		if headers.hasHeader('content-type'):
+			ctype = [headers.getRawHeaders('content-type')][0][0]
+			m = charsetPattern.search(ctype)
+			if not m is None:
+				response.context['charset'] = m.group(1)
 		if headers.hasHeader('set-cookie'):
 			cookies = headers.getRawHeaders('set-cookie')
 			for c in cookies:
@@ -137,7 +152,7 @@ class Getter(Agent):
 		if data is None:
 			return None
 		title, context = data[:2]
-		println(title + ' ' + str(context))
+		print title + ' ' + str(context)
 		
 class TitleGetter(Protocol):
 	""" Body handler class
@@ -161,7 +176,7 @@ class TitleGetter(Protocol):
 		
 		if self.remaining:
 			chunk = bytes[:self.remaining]
-			title = extractTitle(chunk)
+			title = self.extractTitle(chunk)
 			if title and self.titleSent == 0:
 				self.titleSent = 1
 				self.finished.callback([title, self.context])
@@ -176,21 +191,22 @@ class TitleGetter(Protocol):
 		does not return, if title is found, returns control
 		to the callback chain """
 		
-		title = extractTitle(self.bodyStr)
+		title = self.extractTitle(self.bodyStr)
 		if title and self.titleSent == 0:
 			self.titleSent = 1
 			self.finished.callback([title, self.context])
 
-def extractTitle(body):
-	""" Extracts everything between title tags
+	def extractTitle(self, body):
+		""" Extracts everything between title tags
 	
-	returns string """
+		returns string """
 	
-	m = titlePattern.search(body)
-	if m:
-		title = m.group(1)
-		title = processTitle(title)
-		return title
+		m = titlePattern.search(body)
+		if m:
+			title = m.group(1)
+			title = unicode(title, self.context['charset'])
+			title = processTitle(title)
+			return title
 
 def processTitle(title):
 	""" performs miscellaneous processing on title 
