@@ -15,7 +15,9 @@ decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 cookiePattern = re.compile("^(.+?)=(.*?);")
-charsetPattern = re.compile("charset=([^\s]+)")
+charsetPattern = re.compile("charset=([^\s]+)", re.I)
+metaCharsetPattern = re.compile(
+	"meta http-equiv=\"content-type\".+?charset=([^\s]+)", re.I)
 
 entityDefs = htmlentitydefs.entitydefs
 
@@ -177,6 +179,9 @@ class TitleGetter(Protocol):
 		if self.remaining:
 			chunk = bytes[:self.remaining]
 			title = self.extractTitle(chunk)
+			charset = getCharsetFromMetaTag(chunk)
+			if not charset is None:
+				self.context['charset'] = charset
 			if title and self.titleSent == 0:
 				self.titleSent = 1
 				self.finished.callback([title, self.context])
@@ -192,6 +197,9 @@ class TitleGetter(Protocol):
 		to the callback chain """
 		
 		title = self.extractTitle(self.bodyStr)
+		charset = getCharsetFromMetaTag(self.bodyStr)
+		if not charset is None:
+			self.context['charset'] = charset
 		if title and self.titleSent == 0:
 			self.titleSent = 1
 			self.finished.callback([title, self.context])
@@ -204,9 +212,27 @@ class TitleGetter(Protocol):
 		m = titlePattern.search(body)
 		if m:
 			title = m.group(1)
-			title = unicode(title, self.context['charset'])
+			try:
+				self.context['charset']
+			except KeyError:
+				pass
+			else:
+				c = self.context['charset']
+				c = c.lower()
+				if not c.startswith('utf8') and not c.startswith('utf-8'):
+					title = unicode(title, self.context['charset'])
 			title = processTitle(title)
 			return title
+			
+def getCharsetFromMetaTag(str):
+	""" looks for a meta http-equiv content-type tag
+	and gets the charset from it
+	
+	returns string"""
+	m = metaCharsetPattern.search(str)
+	if m:
+		charset = m.group(1)
+		return charset
 
 def processTitle(title):
 	""" performs miscellaneous processing on title 
