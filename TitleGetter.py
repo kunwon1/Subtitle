@@ -233,7 +233,8 @@ class TitleGetter(Protocol):
 				c = self.context['charset']
 				c = c.lower()
 				if not c.startswith('utf8') and not c.startswith('utf-8'):
-					title = unicode(title, self.context['charset'], errors='replace')
+					title = unicode(
+						title, self.context['charset'], errors='replace')
 				else:
 					title = unicode(title, 'utf8', errors='replace')
 			if not isinstance(title, unicode):
