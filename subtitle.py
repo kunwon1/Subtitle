@@ -34,7 +34,6 @@ class IRCTitler(Getter):
 			return
 
 		title = data[0]
-		title = title.encode("utf-8", "ignore")
 		context = data[1]
 		channel = context['channel']
 		

@@ -54,10 +54,6 @@ class Getter(Agent):
 		maxRetries defines the maximum number of times
 		we retry the fetch after a 4xx or 5xx response code
 		
-		GOTCHA: The titles you eventually get back from
-		Get() (through the deferred chain) are returned as
-		unicode strings.
-		
 		Returns deferred."""
 		
 		url = stripNoPrint(url)
@@ -226,6 +222,7 @@ class TitleGetter(Protocol):
 			if not isinstance(title, unicode):
 				title = unicode(title, 'utf8', errors='replace')
 			title = processTitle(title)
+			title = title.encode("utf-8", "ignore")
 			return title
 			
 def getCharsetFromMetaTag(str):
