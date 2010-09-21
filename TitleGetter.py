@@ -15,7 +15,8 @@ decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 cookiePattern = re.compile("^(.+?)=(.*?);")
-charsetPattern = re.compile("charset=([^\s]+)", re.I)
+charsetPattern = re.compile(r'charset=([^\s]+)', re.I)
+domainPattern = re.compile(r'^(https?://[^/]+)/', re.I)
 metaCharsetPattern = re.compile(
 	"meta http-equiv=\"content-type\".+?charset=([^\s]+)", re.I)
 
@@ -50,6 +51,11 @@ class Getter(Agent):
 			type str
 			charset received from server, so we can convert
 			to utf-8
+			
+		context ['domain']:
+			type str
+			stores the scheme and domain portion of the url
+			in case we get a relative redirect
 		
 		maxRetries defines the maximum number of times
 		we retry the fetch after a 4xx or 5xx response code
@@ -58,6 +64,10 @@ class Getter(Agent):
 		
 		url = stripNoPrint(url)
 		println('Get: ' + url)
+		
+		m = domainPattern.search(url)
+		context['domain'] = m.group(1)
+		
 		try:
 			context['cookies']
 		except KeyError:
@@ -113,12 +123,19 @@ class Getter(Agent):
 				m = cookiePattern.search(c)
 				(k, v) = m.group(1, 2)
 				response.context['cookies'][k] = v
-		if re.match("2", rcode):
+		if rcode.startswith('2'):
 			return response
 		elif headers.hasHeader('location'):       # we got a redirect
-			self.Get(headers.getRawHeaders('location')[0], response.context)
+			location = headers.getRawHeaders('location')[0]
+			domain = response.context['domain']
+			if not location.startswith('http'):
+				if not domain.startswith('/'):
+					location = domain + '/' + location
+				else:
+					location = domain + location
+			self.Get(location, response.context)
 			return None
-		elif re.match("4|5", rcode):
+		elif rcode.startswith('4') or rcode.startswith('5'):
 			self.Get(response.context['original_url'], response.context)
 			return None
 		else:
