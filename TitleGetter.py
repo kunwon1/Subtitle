@@ -11,7 +11,7 @@ from twisted.python.failure import Failure
 import sys, re, string, htmlentitydefs
 
 entityPattern = re.compile("&(\w+?);")
-decPattern = re.compile("(&#(\d+?);)")
+decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 cookiePattern = re.compile("^(.+?)=(.*?);")
@@ -270,7 +270,7 @@ def descape_dec(m):
 
 	returns string """
 	
-	return unichr(int(m.group(2)))
+	return unichr(int(m.group(1)))
 	
 def descape_ent(m, defs=entityDefs):
 	""" de-escape one html named entity
