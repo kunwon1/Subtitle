@@ -223,6 +223,8 @@ class TitleGetter(Protocol):
 					title = unicode(title, self.context['charset'], errors='replace')
 				else:
 					title = unicode(title, 'utf8', errors='replace')
+			if not isinstance(title, unicode):
+				title = unicode(title, 'utf8', errors='replace')
 			title = processTitle(title)
 			return title
 			

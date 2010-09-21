@@ -34,8 +34,6 @@ class IRCTitler(Getter):
 			return
 
 		title = data[0]
-		if not isinstance(title, unicode):
-			title = unicode(title, 'utf8', errors='replace')
 		title = title.encode("utf-8", "ignore")
 		context = data[1]
 		channel = context['channel']
@@ -55,7 +53,7 @@ class IRCTitler(Getter):
 		irc.msg(channel, msg)
 		# Getter.Output(self, data)
 
-channels = ['###testing']
+channels = ['###testing', '##news', '##politics']
 botnick = 'title'
 
 urlfinder = URLExtractor()
