@@ -16,7 +16,7 @@ whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 cookiePattern = re.compile("^(.+?)=(.*?);")
 charsetPattern = re.compile(r'charset=([^\s]+)', re.I)
-domainPattern = re.compile(r'^(https?://[^/]+)/', re.I)
+domainPattern = re.compile(r'^(https?://[^/]+)', re.I)
 metaCharsetPattern = re.compile(
 	"meta http-equiv=\"content-type\".+?charset=([^\s]+)", re.I)
 
