@@ -3,8 +3,11 @@
 from twisted.internet import reactor
 from twisted.web.client import HTTPClientFactory, _parse
 from twisted.python.util import println
+from BeautifulSoup import BeautifulSoup, SoupStrainer
 
 import sys, re, string, htmlentitydefs, logging
+
+ttags = SoupStrainer('title')
 
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 entityPattern = re.compile("&(\w+?);")
@@ -32,6 +35,8 @@ class Getter(HTTPClientFactory):
 	def __init__(self, url, contextFactory=None):
 		
 		url = stripNoPrint(url)
+		self.url = url
+		self.charset = None
 		scheme, host, port, path = _parse(url)
 		HTTPClientFactory.__init__(self, url,
 			method='GET', postdata=None, headers=None,
@@ -55,7 +60,6 @@ class Getter(HTTPClientFactory):
 		returns the body it's passed, unmodified"""
 		
 		h = self.response_headers
-		self.charset = None
 
 		if h.has_key('content-type'):
 			for item in h['content-type']:
@@ -77,18 +81,15 @@ class Getter(HTTPClientFactory):
 		
 		returns bytestring """
 
-		m = titlePattern.search(body)
-		if m:
-			title = m.group(1)
-			if not self.charset is None:
-				c = self.charset.lower()
-				if not c.startswith('utf8') and not c.startswith('utf-8'):
-					title = unicode(title, self.charset, errors='replace')
-				else:
-					title = unicode(title, 'utf8', errors='replace')
-			if not isinstance(title, unicode):
-				title = unicode(title, 'utf8', errors='replace')
-
+		# matchlist = titlePattern.findall(body)
+		if not self.charset is None:
+			soup = BeautifulSoup(
+				body, fromEncoding=self.charset, parseOnlyThese=ttags)
+		else:
+			soup = BeautifulSoup(body, parseOnlyThese=ttags)
+		title = soup.title.string
+		title.extract()
+		if not title is None:
 			title = string.strip(title)
 			title = descape_ents(title)
 			title = descape_decs(title)
@@ -110,9 +111,9 @@ class Getter(HTTPClientFactory):
 		
 		logs errors and outputs them w/print"""
 		
-		logging.debug('Error in the titlegetter:')
+		logging.debug('Error in the titlegetter for url ' + self.url + ' -')
 		logging.debug(str(fail))
-		print 'Error in the titlegetter: ' + str(fail)
+		print 'Error in the titlegetter for url ' + self.url + ' - ' + str(fail)
 
 def descape_dec(m):
 	""" de-escape one html decimal entity 
