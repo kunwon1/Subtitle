@@ -5,7 +5,7 @@
 from twisted.internet import reactor
 
 from Credentials import ServerPassword
-from TitleGetter import Getter
+from TitleGetter2 import Getter
 from URLExtractor import URLExtractor
 from IRCBot import IRCBotFactory, IRCBot
 
@@ -16,7 +16,7 @@ class Subtitle(IRCBot):
 		urls = urlfinder.Extract(msg)
 		context = {'channel':channel, 'irc':self}
 		for url in urls:
-			titler.Get(url, context)
+			IRCTitler(url, channel, self)
 		IRCBot.privmsg(self, user, channel, msg)
 
 class SubtitleFactory(IRCBotFactory):
@@ -26,37 +26,30 @@ class SubtitleFactory(IRCBotFactory):
 		IRCBotFactory.__init__(self, channels, botnick)
 		
 class IRCTitler(Getter):
-	def __init__(self, reactor):
-		Getter.__init__(self, reactor)
+	def __init__(self, url, channel, ircObject):
+		self.channel = channel
+		self.irc = ircObject
+		Getter.__init__(self, url)
 
-	def Output(self, data):
-		if data is None:
+	def Output(self, title):
+		if title is None:
 			return
 
-		title = data[0]
-		context = data[1]
-		channel = context['channel']
-		
 		### HACK FOR TESTING ###
-		if channel == '##news':
-			channel = '###testing'
-			
-		if channel == '##politics':
-			channel = '###testing'
+		if self.channel == '##news':
+			self.channel = '###testing'
+
 		########################
-		
-		irc = context['irc']
 		
 		msg = '[ ' + title + ' ]'
 		
-		irc.msg(channel, msg)
+		self.irc.msg(self.channel, msg)
 		# Getter.Output(self, data)
 
-channels = ['###testing', '##news', '##politics']
+channels = ['###testing']
 botnick = 'title'
 
 urlfinder = URLExtractor()
-titler = IRCTitler(reactor)
 irc = SubtitleFactory(channels, botnick)
 
 reactor.connectTCP("irc.freenode.net", 6667, irc)

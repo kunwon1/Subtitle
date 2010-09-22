@@ -14,7 +14,7 @@ entityPattern = re.compile("&(\w+?);")
 decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
-cookiePattern = re.compile("^(.+?)=(.*?);")
+cookiePattern = re.compile("^(.+?)=([^;]+);?")
 charsetPattern = re.compile(r'charset=([^\s]+)', re.I)
 domainPattern = re.compile(r'^(https?://[^/]+)', re.I)
 metaCharsetPattern = re.compile(
@@ -119,6 +119,7 @@ class Getter(Agent):
 				response.context['charset'] = m.group(1)
 		if headers.hasHeader('set-cookie'):
 			cookies = headers.getRawHeaders('set-cookie')
+			print str(cookies) + "\n\n"
 			for c in cookies:
 				m = cookiePattern.search(c)
 				(k, v) = m.group(1, 2)
