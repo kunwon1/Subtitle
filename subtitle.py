@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # Copyright (c) 2010 David Moore.
 # See LICENSE for details.
+import psyco
+psyco.full()
 
 from twisted.internet import reactor
 
@@ -8,6 +10,8 @@ from Credentials import ServerPassword
 from TitleGetter2 import Getter
 from URLExtractor import URLExtractor
 from IRCBot import IRCBotFactory, IRCBot
+
+import sys
 
 class Subtitle(IRCBot):
 	password = ServerPassword
@@ -37,15 +41,15 @@ class IRCTitler(Getter):
 		if self.channel == '##news':
 			self.channel = '###testing'
 			
-		if self.channel == '##politics':
-			self.channel = '###testing'
+		# if self.channel == '##politics':
+			# self.channel = '###testing'
 
 		########################
 		
 		msg = '[ ' + title + ' ]'
 		
 		self.irc.msg(self.channel, msg)
-		# Getter.Output(self, data)
+		# Getter.Output(self, title)
 
 channels = ['###testing', '##news', '##politics']
 botnick = 'title'

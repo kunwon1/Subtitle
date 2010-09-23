@@ -1,21 +1,31 @@
-#!/usr/bin/python
+# Copyright (c) 2010 David Moore.
+# See LICENSE for details.
 
 from twisted.internet import reactor
-from twisted.web.client import HTTPClientFactory, _parse
+from twisted.web.client import HTTPClientFactory, _parse, HTTPPageGetter
 from twisted.python.util import println
 from BeautifulSoup import BeautifulSoup, SoupStrainer
 
-import sys, re, string, htmlentitydefs, logging
+import sys, os, re, string, htmlentitydefs
 
 ttags = SoupStrainer('title')
 
-titlePattern = re.compile(r'<title>(.*?)</title>', re.S | re.I )
 entityPattern = re.compile("&(\w+?);")
 decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
 charsetPattern = re.compile(r'charset=([^\s]+)', re.I)
 
-logging.basicConfig(filename='error.log', level=logging.DEBUG)
+class CustomPageGetter(HTTPPageGetter):
+	def dataReceived(self, data):
+		try:
+			self.detectedDelimiter
+		except AttributeError:
+			if data.find("\r\n") >= 0:
+				self.detectedDelimiter = 1
+			else:
+				self.detectedDelimiter = 1
+				self.delimiter = "\n"
+		return HTTPPageGetter.dataReceived(self, data)
 
 class Getter(HTTPClientFactory):
 	""" A title fetcher
@@ -32,15 +42,19 @@ class Getter(HTTPClientFactory):
 	the Output method, which will be called with the title.  Output will never
 	get None as an arg."""
 	
+	protocol = CustomPageGetter
+	
 	def __init__(self, url, contextFactory=None):
 		
 		url = stripNoPrint(url)
+		print "Get: ", url
 		self.url = url
 		self.charset = None
 		scheme, host, port, path = _parse(url)
 		HTTPClientFactory.__init__(self, url,
 			method='GET', postdata=None, headers=None,
-			agent='Mozilla/5.0 (compatible; Subtitle/0.3)')
+			agent='Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US;' + 
+				' rv:1.9.2.10) Gecko/20100914 Firefox/3.6.10')
 		if scheme == 'https':
 			from twisted.internet import ssl
 			if contextFactory is None:
@@ -80,13 +94,19 @@ class Getter(HTTPClientFactory):
 		entities, and stuffs it all back into a bytestring
 		
 		returns bytestring """
-
-		# matchlist = titlePattern.findall(body)
+		if body is None:
+			print 'Got no body for url: ', self.url
+			return
 		if not self.charset is None:
 			soup = BeautifulSoup(
 				body, fromEncoding=self.charset, parseOnlyThese=ttags)
 		else:
 			soup = BeautifulSoup(body, parseOnlyThese=ttags)
+		try:
+			soup.title.string
+		except AttributeError:
+			print 'Got no title from soup: ', self.url
+			return
 		title = soup.title.string
 		title.extract()
 		if not title is None:
@@ -97,6 +117,10 @@ class Getter(HTTPClientFactory):
 			title = title.encode("utf-8", "ignore")
 			if not title is None:
 				self.Output(title)
+			else:
+				print 'Got no title for url after string processing: ', self.url
+		else:
+			print 'Found no title string for url: ', self.url
 
 	def Output(self, title):
 		""" default Output method.
@@ -111,8 +135,6 @@ class Getter(HTTPClientFactory):
 		
 		logs errors and outputs them w/print"""
 		
-		logging.debug('Error in the titlegetter for url ' + self.url + ' -')
-		logging.debug(str(fail))
 		print 'Error in the titlegetter for url ' + self.url + ' - ' + str(fail)
 
 def descape_dec(m):
