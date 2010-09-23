@@ -32,10 +32,11 @@ class SubtitleFactory(IRCBotFactory):
 		IRCBotFactory.__init__(self, channels, botnick)
 		
 class IRCTitler(Getter):
-	def __init__(self, url, channel, ircObject):
+	def __init__(self, url, channel, ircObject, contextFactory=None, retries=0):
 		self.channel = channel
 		self.irc = ircObject
-		Getter.__init__(self, url)
+		Getter.__init__(self, url,
+			contextFactory=contextFactory, retries=retries)
 
 	def Output(self, title):
 
@@ -50,13 +51,12 @@ class IRCTitler(Getter):
 		# Getter.Output(self, title)
 		
 	def Err(self, fail):
-		print 'in err'
 		if self.retries >= maxRetries:
 			print 'exceeded maxRetries for ', self.url
 		else:
 			retryCount = self.retries + 1
 			reactor.callLater(retryCount, IRCTitler, self.url,
-				self.channel, contextFactory=None, retries=retryCount)
+				self.channel, self.irc, contextFactory=None, retries=retryCount)
 			return None
 		
 		Getter.Err(self, fail)
