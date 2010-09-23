@@ -6,7 +6,7 @@ from twisted.web.client import HTTPClientFactory, _parse, HTTPPageGetter
 from twisted.python.util import println
 from BeautifulSoup import BeautifulSoup, SoupStrainer
 
-import sys, os, re, string, htmlentitydefs
+import sys, re, string, htmlentitydefs
 
 ttags = SoupStrainer('title')
 
