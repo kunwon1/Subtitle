@@ -11,8 +11,6 @@ import sys, re, string, htmlentitydefs
 
 ttags = SoupStrainer('title')
 
-maxRetries = 5
-
 entityPattern = re.compile("&(\w+?);")
 decPattern = re.compile("&#(\d+?);")
 whitespacePattern = re.compile("\s+")
@@ -34,7 +32,7 @@ class Getter(HTTPClientFactory):
 	""" A title fetcher
 	
 	A new class is instantiated for each title fetch.
-	Sublcasses HTTPClientFactory. 
+	Subclasses HTTPClientFactory. 
 	
 	Takes one mandatory argument and one optional argument.
 	
@@ -50,7 +48,10 @@ class Getter(HTTPClientFactory):
 	def __init__(self, url, contextFactory=None, retries=0):
 
 		url = stripNoPrint(url)
-		print "Get: ", url
+		if retries > 0:
+			print "Retrying: ", url
+		else:
+			print "Get: ", url
 		self.retries = retries
 		self.url = url
 		self.charset = None
@@ -67,8 +68,8 @@ class Getter(HTTPClientFactory):
 		else:
 			reactor.connectTCP(host, port, self)
 		
-		self.deferred.addCallbacks(self.getCharset, self.__err)
-		self.deferred.addCallbacks(self.getTitle, self.__err)
+		self.deferred.addCallbacks(self.getCharset, self.Err)
+		self.deferred.addCallbacks(self.getTitle, self.Err)
 
 	def getCharset(self, body):
 		"""This is inserted in the callback chain before getTitle to get any
@@ -111,7 +112,6 @@ class Getter(HTTPClientFactory):
 			print 'Got no title from soup: ', self.url
 			return
 		title = soup.title.string
-		title.extract()
 		if not title is None:
 			title = string.strip(title)
 			title = descape_ents(title)
@@ -133,17 +133,8 @@ class Getter(HTTPClientFactory):
 
 		print title
 		
-	def __err(self, fail):
-		""" error logging and output
-		
-		logs errors and outputs them w/print"""
-		if self.retries >= maxRetries:
-			print 'exceeded maxRetries for ', self.url
-		else:
-			retryCount = self.retries + 1
-			reactor.callLater(retryCount, Getter, self.url,
-				contextFactory=None, retries=retryCount)
-			return None
+	def Err(self, fail):
+		""" error handler """
 		
 		print 'Error in the titlegetter for url ' + self.url + ' - ' + str(fail)
 
@@ -156,15 +147,15 @@ def descape_dec(m):
 	
 	return unichr(int(m.group(1)))
 	
-def descape_ent(m, defs=htmlentitydefs.entitydefs):
+def descape_ent(m, defs=htmlentitydefs.name2codepoint):
 	""" de-escape one html named entity
 	
 	ex: &quot; 
 	
 	returns string """
-	
+
 	try:
-		return defs[m.group(1)]
+		return unichr(defs[m.group(1)])
 	except KeyError:
 		return m.group(0) # use as is
 	

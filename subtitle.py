@@ -13,6 +13,8 @@ from IRCBot import IRCBotFactory, IRCBot
 
 import sys
 
+maxRetries = 5
+
 class Subtitle(IRCBot):
 	password = ServerPassword
 
@@ -40,18 +42,30 @@ class IRCTitler(Getter):
 		### HACK FOR TESTING ###
 		if self.channel == '##news':
 			self.channel = '###testing'
-			
-		# if self.channel == '##politics':
-			# self.channel = '###testing'
-
 		########################
 		
 		msg = '[ ' + title + ' ]'
 		
 		self.irc.msg(self.channel, msg)
 		# Getter.Output(self, title)
+		
+	def Err(self, fail):
+		print 'in err'
+		if self.retries >= maxRetries:
+			print 'exceeded maxRetries for ', self.url
+		else:
+			retryCount = self.retries + 1
+			reactor.callLater(retryCount, IRCTitler, self.url,
+				self.channel, contextFactory=None, retries=retryCount)
+			return None
+		
+		Getter.Err(self, fail)
 
-channels = ['###testing', '##news', '##politics']
+channels = ['###testing', '##news', '##politics', '##politics-spam']
+try:
+	channels
+except:
+	channels = ['###testing']
 botnick = 'title'
 
 urlfinder = URLExtractor()
