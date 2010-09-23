@@ -1,8 +1,5 @@
 TODO:  (ordered by priority, highest first)
 
-TitleGetter.py isn't really asynchronous, there are big problems with how state
-is saved.  Will move to a ClientFactory, no more coding on the Agent subclass.
-
 'First Post' tracking - remember who posted a url first and include that data
 with subsequent title responses.
 
