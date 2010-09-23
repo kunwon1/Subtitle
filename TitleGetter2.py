@@ -112,6 +112,7 @@ class Getter(HTTPClientFactory):
 			print 'Got no title from soup: ', self.url
 			return
 		title = soup.title.string
+		title.extract()
 		if not title is None:
 			title = string.strip(title)
 			title = descape_ents(title)
