@@ -4,11 +4,14 @@
 from twisted.internet import reactor
 from twisted.web.client import HTTPClientFactory, _parse, HTTPPageGetter
 from twisted.python.util import println
+from twisted.python.failure import Failure
 from BeautifulSoup import BeautifulSoup, SoupStrainer
 
 import sys, re, string, htmlentitydefs
 
 ttags = SoupStrainer('title')
+
+maxRetries = 5
 
 entityPattern = re.compile("&(\w+?);")
 decPattern = re.compile("&#(\d+?);")
@@ -44,10 +47,11 @@ class Getter(HTTPClientFactory):
 	
 	protocol = CustomPageGetter
 	
-	def __init__(self, url, contextFactory=None):
-		
+	def __init__(self, url, contextFactory=None, retries=0):
+
 		url = stripNoPrint(url)
 		print "Get: ", url
+		self.retries = retries
 		self.url = url
 		self.charset = None
 		scheme, host, port, path = _parse(url)
@@ -95,7 +99,6 @@ class Getter(HTTPClientFactory):
 		
 		returns bytestring """
 		if body is None:
-			print 'Got no body for url: ', self.url
 			return
 		if not self.charset is None:
 			soup = BeautifulSoup(
@@ -134,6 +137,13 @@ class Getter(HTTPClientFactory):
 		""" error logging and output
 		
 		logs errors and outputs them w/print"""
+		if self.retries >= maxRetries:
+			print 'exceeded maxRetries for ', self.url
+		else:
+			retryCount = self.retries + 1
+			reactor.callLater(retryCount, Getter, self.url,
+				contextFactory=None, retries=retryCount)
+			return None
 		
 		print 'Error in the titlegetter for url ' + self.url + ' - ' + str(fail)
 
